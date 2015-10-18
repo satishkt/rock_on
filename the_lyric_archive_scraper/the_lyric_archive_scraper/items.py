@@ -20,6 +20,7 @@ class ArtistScraperItem(scrapy.Item):
         super(ArtistScraperItem, self).__setitem__(key, value)
     # define the fields for your item here like:
     # name = scrapy.Field()
+    item_type = scrapy.Field()
     artist_name = scrapy.Field()
     formed = scrapy.Field()
     genre = scrapy.Field()
@@ -41,6 +42,7 @@ class AlbumScraperItem(scrapy.Item):
         if key not in self.fields:
             self.fields[key]= scrapy.Field()
         super(AlbumScraperItem, self).__setitem__(key, value)
+    item_type = scrapy.Field()
     artist_name = scrapy.Field()
     album_name = scrapy.Field()
     album_year = scrapy.Field()
@@ -57,6 +59,7 @@ class SongLyricScraperItem(scrapy.Item):
         if key not in self.fields:
             self.fields[key]= scrapy.Field()
         super(SongLyricScraperItem, self).__setitem__(key, value)
+    item_type = scrapy.Field()
     song_lyric = scrapy.Field()
     song_rating = scrapy.Field()
     song_composer = scrapy.Field()

@@ -46,7 +46,7 @@ class BaseLyricArchiveScraper(scrapy.Spider):
     def __init__(self, *args, **kwargs):
         self.setup_logging()
         self._logger = logging.getLogger(__name__)
-        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+        #locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
         self.failed_urls = []
         dispatcher.connect(self.handle_spider_closed, signals.spider_closed)
 

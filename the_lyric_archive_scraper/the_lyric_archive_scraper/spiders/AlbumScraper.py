@@ -23,6 +23,7 @@ class AlbumScraper(ArtistScraper):
         self._logger.debug("Parsing Album %s for Artist %s", album_name, artist_name)
         hxs = Selector(response)
         album = AlbumScraperItem()
+        album['item_type'] = 'Album'
         album['album_name'] = album_name
         album['artist_name'] = artist_name
 

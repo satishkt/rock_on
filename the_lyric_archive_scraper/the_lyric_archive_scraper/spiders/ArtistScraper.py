@@ -18,6 +18,7 @@ class ArtistScraper(BaseLyricArchiveScraper):
         self._logger.debug("Parsing Artist Page at url %s ", response.url)
         hxs = Selector(response)
         artist = ArtistScraperItem()
+        artist['item_type'] = 'Artist'
 
         artist_title = hxs.xpath('/html/body/table[1]/tr[1]/td/h1/text()').extract()[0]
         artist['artist_name'] = artist_title.rstrip('lyrics').strip()
@@ -68,7 +69,7 @@ class ArtistScraper(BaseLyricArchiveScraper):
                     if (len(li_val) > 0):
                         style_val.append(li_val[0])
                     artist['artist_styles'] = ','.join(style_val)
-        # yield artist
+        yield artist
 
         album_links = hxs.xpath("//div[@style = 'float: left; padding:5px']/table//tr/td/strong/a")
 
