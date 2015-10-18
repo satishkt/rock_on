@@ -10,15 +10,15 @@ from scrapy.selector import Selector, HtmlXPathSelector
 from scrapy import signals
 from scrapy.xlib.pydispatch import dispatcher
 from scrapy import optional_features
-
+import urlparse
 
 
 class BaseLyricArchiveScraper(scrapy.Spider):
     optional_features.remove('boto')
     handle_httpstatus_list = [404]
     # interested_genres = ['Adult Alternative Pop/Rock','Adult Contemporary','Alternative Metal','Alternative Pop/Rock','British Metal']
-    interested_genres = ['British Metal']
-    pipeline=[]
+    interested_genres = ['British-Metal1', 'Aboriginal-Rock']
+    pipeline = []
     _logger = logging.getLogger(__name__)
     name = "Lyric_Archive_Base"
     alloweddomains = ["thelyricarchive.com/"]
@@ -29,7 +29,7 @@ class BaseLyricArchiveScraper(scrapy.Spider):
         "http://www.thelyricarchive.com/genres/Rock/"
     ]
 
-    def setup_logging(self,default_log_file_path='logging.json',default_level=logging.DEBUG,env_key = 'LOG_CFG'):
+    def setup_logging(self, default_log_file_path='logging.json', default_level=logging.DEBUG, env_key='LOG_CFG'):
         """Setup logging configuration
         """
         path = default_log_file_path
@@ -43,7 +43,6 @@ class BaseLyricArchiveScraper(scrapy.Spider):
         else:
             logging.basicConfig(level=default_level)
 
-
     def __init__(self, *args, **kwargs):
         self.setup_logging()
         self._logger = logging.getLogger(__name__)
@@ -54,21 +53,34 @@ class BaseLyricArchiveScraper(scrapy.Spider):
     def parse(self, response):
         self._logger.debug("Base Scraper - Res[pmse method for url %s ", response.url)
         hxs = Selector(response)
-        #/html/body/table/tbody/tr[304]/td[2]/span[2]/a
+        # /html/body/table/tbody/tr[304]/td[2]/span[2]/a
         ##Get all the urls for the genre specific pages
 
         styles = hxs.xpath("//*[@class = 'stdmin']/tr/td/a/@href")
+        print ["http://www.thelyricarchive.com/genres/Rock/{}/".format(x) for x in self.interested_genres]
         for style in styles:
-            print style.extract()
-            if style.extract() in self.interested_genres:
-                self._logger("Parsing the genre page for genre %s,with url ", style.extract())
-                artists = hxs.xpath('/html/body/table[2]/tbody/tr/td[2]/table/tbody/tr[3]/td[1]/a/@href')
-                for artist in artists :
-                    self._logger("Adding callback to parse page for Artist : %s ",artist.extract())
-                    self.artist_page_urls.append(artist.extract())
-                    yield scrapy.Request(artist.extract(),callback= self.parseArtistPage)
+            parse_object = urlparse.urlparse(style.extract())
+            style_str = (parse_object.path[13:])[:-1]
+            if style_str in self.interested_genres:
+                self._logger.debug("Parsing the genre page for genre %s,with url %s", style_str, style.extract())
+                request = scrapy.Request(style.extract(), callback=self.parseStylePage)
+                request.meta['genre'] = style_str
+                yield request
 
-
+    def parseStylePage(self, response):
+        exclude = ['artists']
+        sub_genre = response.meta['genre']
+        self._logger.debug("Parsing the page for sub genre %s ", sub_genre)
+        hxs = Selector(response)
+        artists_str_coll = hxs.xpath('//a[contains(@href,"artist")]/@href').extract()
+        artists = list((s for s in artists_str_coll if not any(e in s for e in exclude)))
+        for artist in artists:
+            self._logger.debug("Adding callback to parse page for Artist : %s ", artist)
+            self.artist_page_urls.append(artist)
+            request = scrapy.Request(artist, callback=self.parseArtistPage)
+            request.meta['sub_genre'] = sub_genre
+            request.meta['artist_url'] = artist
+            yield request
 
     def handle_spider_closed(self, spider, reason):  # added self
         self.crawler.stats.set_value('failed_urls', ','.join(spider.failed_urls))
